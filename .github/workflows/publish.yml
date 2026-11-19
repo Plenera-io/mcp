@@ -1,0 +1,67 @@
+name: Publish to npm
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    if: github.repository == 'Plenera-io/mcp' && (github.event_name == 'push' || github.ref == 'refs/heads/main')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - name: Check release tag
+        if: github.event_name == 'push'
+        run: |
+          node --input-type=module <<'JS'
+          import { readFileSync } from 'node:fs';
+
+          const { version } = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (!/^\d+\.\d+\.\d+$/.test(version) || process.env.GITHUB_REF_NAME !== `v${version}`) {
+            throw new Error('The tag must match the stable version in package.json.');
+          }
+          JS
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - name: Pack the tested build
+        run: npm pack --ignore-scripts
+      - name: Verify npm trusts this workflow
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          node --input-type=module <<'JS'
+          const url = new URL(process.env.ACTIONS_ID_TOKEN_REQUEST_URL);
+          url.searchParams.set('audience', 'npm:registry.npmjs.org');
+
+          const identity = await fetch(url, {
+            headers: { Authorization: `Bearer ${process.env.ACTIONS_ID_TOKEN_REQUEST_TOKEN}` },
+          });
+          if (!identity.ok) throw new Error(`GitHub OIDC returned HTTP ${identity.status}`);
+
+          const { value } = await identity.json();
+          const name = encodeURIComponent('@plenera/mcp');
+          const exchange = await fetch(`https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/${name}`, {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${value}` },
+          });
+          if (exchange.status !== 201) throw new Error(`npm OIDC exchange returned HTTP ${exchange.status}`);
+          await exchange.body?.cancel();
+          console.log('npm accepted this workflow identity for @plenera/mcp.');
+          JS
+      - name: Publish the tarball to npm
+        if: github.event_name == 'push'
+        run: npm publish "./plenera-mcp-${GITHUB_REF_NAME#v}.tgz" --access public

@@ -4,7 +4,7 @@ Tools for projects, statuses, issue search/query, assigned work, issue creation/
 
 For the managed OAuth connection, add `https://app.plenera.io/mcp` to your client. See the [Plenera agent setup guide](https://app.plenera.io/docs/agents).
 
-For the local CLI, create a key in **Settings → Agents** or use a personal API token. Store it in your client's secret store and set your installation's `/api/v1` URL and workspace slug. The npm configuration below applies once version 1.0.0 is published. Use the source installation until then.
+For the local CLI, create a key in **Settings → Agents** or use a personal API token. Store it in your client's secret store and set your installation's `/api/v1` URL and workspace slug.
 
 ```json
 {
@@ -45,9 +45,15 @@ npm ci
 npm run build
 ```
 
-Use `node` with the absolute path to `dist/cli.js` in your MCP client. To check a release, run `npm run typecheck`, `npm test`, and `npm pack`. The tarball includes the CLI, bundled API client, and skill. A maintainer with access to the `@plenera` scope can publish the inspected tarball with `npm publish <tarball> --access public`.
+Use `node` with the absolute path to `dist/cli.js` in your MCP client. To check a release, run `npm run typecheck`, `npm test`, and `npm pack`. The tarball includes the CLI, bundled API client, and skill.
 
 Run `npm run generate:api` to regenerate the API types from the [public Plenera OpenAPI contract](https://app.plenera.io/api/v1/openapi.json). When changing a tool contract shared with the hosted MCP service, coordinate the corresponding change in the Plenera app and run the transport tests.
+
+## Releases
+
+Update the package version and lockfile with `npm version <version> --no-git-tag-version`, then merge the version change into `main`. Push the matching stable tag, such as `v1.0.1`, on that commit. The [Publish to npm workflow](.github/workflows/publish.yml) checks the tag, installs the locked dependencies, tests the build, and publishes its tarball using npm Trusted Publishing.
+
+Run the workflow manually from `main` to verify the build and npm's GitHub OIDC connection without publishing a package version.
 
 ## Streamable HTTP
 
