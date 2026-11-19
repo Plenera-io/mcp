@@ -1,0 +1,52 @@
+{
+  "name": "@plenera/mcp",
+  "version": "1.0.0",
+  "description": "Plenera tools for coding agents over MCP stdio and Streamable HTTP",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "plenera-mcp": "./dist/cli.js"
+  },
+  "exports": {
+    ".": "./dist/server.js"
+  },
+  "files": [
+    "dist",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Plenera-io/mcp.git"
+  },
+  "scripts": {
+    "build": "node build.mjs",
+    "prepack": "npm run build",
+    "generate:api": "openapi-typescript https://app.plenera.io/api/v1/openapi.json -o src/api-client/generated.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && vitest run"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "openapi-fetch": "^0.15.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.0",
+    "esbuild": "0.28.2",
+    "openapi-typescript": "^7.10.1",
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "homepage": "https://github.com/Plenera-io/mcp#readme",
+  "bugs": {
+    "url": "https://github.com/Plenera-io/mcp/issues"
+  }
+}
